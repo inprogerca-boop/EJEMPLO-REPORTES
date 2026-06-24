@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Ortegon — Control de Obras</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS CDN Imports -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+  
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Chart.js & ApexCharts & MapLibre GL JS & SheetJS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js"></script>
+  
+  <style>
+    /* variables de diseño premium */
+    :root {
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --text-primary: #1f2937;
+      --text-secondary: #4b5563;
+      --border-color: #e5e7eb;
+      --accent-color: #1a73e8;
+      --accent-hover: #1557b0;
+      --accent-light: #e8f0fe;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+      --success-color: #34a853;
+      --success-light: #e6f4ea;
+      --warning-color: #fbbc04;
+      --warning-light: #fef7e0;
+      --danger-color: #ea4335;
+      --danger-light: #fce8e6;
+      --sidebar-width: 260px;
+      --header-height: 70px;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #111827;
+      --bg-secondary: #1f2937;
+      --text-primary: #f9fafb;
+      --text-secondary: #9ca3af;
+      --border-color: #374151;
+      --accent-color: #3b82f6;
+      --accent-hover: #60a5fa;
+      --accent-light: #1e3a8a;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+      --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+      --success-color: #10b981;
+      --success-light: #064e3b;
+      --warning-color: #f59e0b;
+      --warning-light: #78350f;
+      --danger-color: #ef4444;
+      --danger-light: #7f1d1d;
+    }
+
+    /* estilos base */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      transition: background-color 0.3s, color 0.3s;
+      overflow-x: hidden;
+    }
+
+    /* layout principal */
+    .app-container {
+      display: flex;
+      width: 100%;
+    }
+
+    /* sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background-color: var(--bg-secondary);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 100;
+      transition: transform 0.3s ease, background-color 0.3s, border-color 0.3s;
+    }
+
+    .sidebar-brand {
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-logo {
+      background: var(--accent-color);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 20px;
+    }
+
+    .brand-text h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      max-width: 160px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .brand-text p {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .sidebar-menu {
+      list-style: none;
+      padding: 24px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .menu-item button {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 14px;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .menu-item button:hover {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .menu-item.active button {
+      background-color: var(--accent-light);
+      color: var(--accent-color);
+    }
+
+    .sidebar-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .theme-toggle-btn {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background-color 0.2s;
+    }
+
+    .theme-toggle-btn:hover {
+      background-color: var(--bg-primary);
+    }
+
+    .update-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    /* contenido principal */
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 30px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      transition: margin-left 0.3s ease;
+    }
+
+    /* header */
+    .header {
+      height: var(--header-height);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 20px;
+      gap: 16px;
+    }
+
+    .header-title h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .header-title p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .header-filters {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .filter-select {
+      padding: 10px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+      cursor: pointer;
+      min-width: 140px;
+      max-width: 240px;
+      transition: border-color 0.2s;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
+    .filter-select:focus {
+      border-color: var(--accent-color);
+    }
+
+    /* botón de subir excel */
+    .upload-btn {
+      background-color: var(--accent-color);
+      color: white !important;
+      border: none !important;
+      font-weight: 600;
+      transition: background-color 0.2s;
+    }
+
+    .upload-btn:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .hamburger-menu {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    /* banner de alertas */
+    .alert-banner {
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert-banner-warning {
+      background-color: var(--warning-light);
+      border: 1px solid var(--warning-color);
+    }
+
+    .alert-banner-success {
+      background-color: var(--success-light);
+      border: 1px solid var(--success-color);
+    }
+
+    .alert-banner h4 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .alert-banner p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* grid de KPIs */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+    }
+
+    .kpi-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      transition: all 0.2s ease;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .kpi-info h3 {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.2;
+    }
+
+    .kpi-meta {
+      font-size: 12px;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .meta-positive {
+      color: var(--success-color);
+      font-weight: 600;
+    }
+
+    .meta-neutral {
+      color: var(--text-secondary);
+    }
+
+    .kpi-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .kpi-icon.blue { background-color: rgba(26, 115, 232, 0.1); color: var(--accent-color); }
+    .kpi-icon.green { background-color: rgba(52, 168, 83, 0.1); color: var(--success-color); }
+    .kpi-icon.yellow { background-color: rgba(251, 188, 4, 0.1); color: var(--warning-color); }
+    .kpi-icon.red { background-color: rgba(234, 67, 53, 0.1); color: var(--danger-color); }
+
+    /* grid de paneles y gráficos */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .full-width-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .panel-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 380px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .chart-container {
+      position: relative;
+      flex: 1;
+      width: 100%;
+      height: 300px;
+    }
+
+    /* tabla de datos */
+    .table-card {
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .table-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .search-input-container {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+    }
+
+    .search-input-container i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-color);
+    }
+
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: var(--bg-primary);
+      color: var(--text-secondary);
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-primary);
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background-color: var(--bg-primary);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-blue { background-color: var(--accent-light); color: var(--accent-color); }
+    .badge-green { background-color: var(--success-light); color: var(--success-color); }
+    .badge-gray { background-color: var(--bg-primary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+
+    /* celda estilo Looker Studio con barra de progreso */
+    .progress-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 150px;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 6px;
+      background-color: var(--border-color);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background-color: var(--accent-color);
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .progress-bar-fill.complete {
+      background-color: var(--success-color);
+    }
+
+    .progress-text {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* mapa interactivo */
+    .map-panel {
+      height: 480px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--card-shadow);
+      position: relative;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-meta-overlay {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background-color: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--card-shadow);
+      z-index: 10;
+      max-width: 280px;
+      pointer-events: auto;
+    }
+
+    .map-meta-overlay h4 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .map-meta-overlay p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* popup de MapLibre */
+    .maplibregl-popup-content {
+      background-color: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-color);
+      border-radius: 8px !important;
+      box-shadow: var(--card-shadow) !important;
+      padding: 16px !important;
+    }
+
+    .maplibregl-popup-close-button {
+      color: var(--text-secondary) !important;
+    }
+
+    /* loading overlay */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--bg-primary);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      transition: opacity 0.4s ease, visibility 0.4s;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--border-color);
+      border-top-color: var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* paneles de vista (secciones) */
+    .panel-view {
+      display: none;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .panel-view.active {
+      display: flex;
+    }
+
+    /* diseño responsive */
+    @media (max-width: 1180px) {
+      .header-filters {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 20px;
+      }
+
+      .hamburger-menu {
+        display: block;
+      }
+
+      .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .header-filters {
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        margin-top: 12px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        height: auto;
+      }
+
+      .header-filters {
+        width: 100%;
+        flex-wrap: wrap;
+      }
+
+      .filter-select {
+        flex: 1;
+        min-width: 120px;
+      }
+    }
+  </style>
+</head>
+<body data-theme="light">
+
+  <!-- loading screen -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Cargando base de datos de obras...</div>
+  </div>
+
+  <div class="app-container">
+    
+    <!-- sidebar izquierdo fijo -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">O</div>
+        <div class="brand-text">
+          <h1 id="sidebarSpreadsheetName">OBRAEJEMP01</h1>
+          <p>Control de Partidas</p>
+        </div>
+      </div>
+      
+      <ul class="sidebar-menu">
+        <li class="menu-item active" data-tab="resumen">
+          <button><i data-lucide="layout-dashboard"></i> Resumen General</button>
+        </li>
+        <li class="menu-item" data-tab="presupuesto">
+          <button><i data-lucide="wallet"></i> Presupuesto Base</button>
+        </li>
+        <li class="menu-item" data-tab="avance">
+          <button><i data-lucide="trending-up"></i> Avance Diario</button>
+        </li>
+        <li class="menu-item" data-tab="partidas">
+          <button><i data-lucide="list-todo"></i> Tabla de Partidas</button>
+        </li>
+        <li class="menu-item" data-tab="mapa">
+          <button><i data-lucide="map-pin"></i> Ubicación Obra</button>
+        </li>
+      </ul>
+      
+      <div class="sidebar-footer">
+        <button class="theme-toggle-btn" id="themeToggleBtn">
+          <i data-lucide="moon"></i> <span>Modo Oscuro</span>
+        </button>
+        <div class="update-time" id="updateTime">Actualizando...</div>
+      </div>
+    </aside>
+    
+    <!-- contenido principal -->
+    <main class="main-content">
+      
+      <!-- cabecera global -->
+      <header class="header">
+        <div style="display: flex; align-items: center; gap: 16px; min-width: 0; flex: 1;">
+          <button class="hamburger-menu" id="hamburgerMenu" aria-label="Abrir Menú">
+            <i data-lucide="menu"></i>
+          </button>
+          <div class="header-title" style="min-width: 0;">
+            <h2 id="viewTitle">Resumen General</h2>
+            <p id="viewSubtitle">Consolidado general de ejecución física</p>
+          </div>
+        </div>
+        
+        <div class="header-filters">
+          <!-- Selector de Obra Dinámico -->
+          <select class="filter-select" id="globalObraFilter">
+            <option value="" disabled selected>Seleccione Obra</option>
+          </select>
+          
+          <!-- Filtro de Capítulos -->
+          <select class="filter-select" id="globalCapituloFilter">
+            <option value="ALL">Todos los Capítulos</option>
+          </select>
+          
+          <!-- Filtro de Unidades -->
+          <select class="filter-select" id="globalUnidadFilter">
+            <option value="ALL">Todas las Unidades</option>
+          </select>
+          
+          <!-- Cargador de Excel local (oculto e interactivo) -->
+          <input type="file" id="excelFileInput" accept=".xlsx, .xls" style="display: none;">
+          <button class="filter-select upload-btn" id="uploadExcelBtn">
+            <i data-lucide="upload-cloud" style="display: inline-block; vertical-align: middle; width: 15px; height: 15px; margin-right: 6px;"></i>
+            <span style="vertical-align: middle;">Subir Reporte</span>
+          </button>
+        </div>
+      </header>
+      
+      <!-- Banner de alertas (Carga de Excel) -->
+      <div class="alert-banner alert-banner-warning" id="uploadAlertBanner">
+        <i data-lucide="alert-triangle" style="color: var(--warning-color); flex-shrink: 0;"></i>
+        <div style="flex: 1;">
+          <h4>Reporte diario pendiente de carga</h4>
+          <p>
+            El avance y lo ejecutado de esta obra se muestran en 0%. Haz clic en <strong>"Subir Reporte"</strong> para cargar el archivo Excel (.xlsx) de la medición del día.
+          </p>
+        </div>
+      </div>
+
+      <div class="alert-banner alert-banner-success" id="successUploadBanner" style="display: none;">
+        <i data-lucide="check-circle" style="color: var(--success-color); flex-shrink: 0;"></i>
+        <div style="flex: 1;">
+          <h4 id="successBannerTitle">¡Reporte Diario cargado con éxito!</h4>
+          <p id="successBannerDesc">Se procesaron los registros de ejecución localmente.</p>
+        </div>
+      </div>
+
+      <!-- KPI cards globales -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <h3>Partidas Presupuestadas</h3>
+            <div class="kpi-value" id="kpiTotalPartidas">0</div>
+            <div class="kpi-meta"><span class="meta-neutral">Items activos en obra</span></div>
+          </div>
+          <div class="kpi-icon blue"><i data-lucide="file-spreadsheet"></i></div>
+        </div>
+        
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <h3>Volumen Planificado</h3>
+            <div class="kpi-value" id="kpiTotalPlanificado">0</div>
+            <div class="kpi-meta"><span class="meta-neutral">Cantidades globales</span></div>
+          </div>
+          <div class="kpi-icon green"><i data-lucide="bar-chart-3"></i></div>
+        </div>
+        
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <h3>Ejecutado del Reporte</h3>
+            <div class="kpi-value" id="kpiTotalEjecutado">0</div>
+            <div class="kpi-meta"><span class="meta-positive" id="kpiEjecutadoMeta">+0%</span> <span class="meta-neutral">vs plan</span></div>
+          </div>
+          <div class="kpi-icon yellow"><i data-lucide="check-circle-2"></i></div>
+        </div>
+        
+        <div class="kpi-card">
+          <div class="kpi-info">
+            <h3>Avance Físico</h3>
+            <div class="kpi-value" id="kpiAvanceFisico">0%</div>
+            <div class="kpi-meta"><span class="meta-neutral">Eficiencia global</span></div>
+          </div>
+          <div class="kpi-icon red"><i data-lucide="percent"></i></div>
+        </div>
+      </section>
+
+      <!-- Paneles dinámicos por pestaña -->
+      
+      <!-- 1. panel resumen -->
+      <div class="panel-view active" id="panel-resumen">
+        <div class="dashboard-grid">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3>Distribución de Partidas por Unidad</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chartUnidadesDonut"></canvas>
+            </div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3>Top 10 Partidas por Presupuesto Planificado</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chartTopPresupuesto"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 2. panel presupuesto -->
+      <div class="panel-view" id="panel-presupuesto">
+        <div class="dashboard-grid full-width-grid">
+          <div class="panel-card" style="min-height: 480px;">
+            <div class="panel-header">
+              <h3>Jerarquía del Presupuesto por Capítulos (Cantidades Planificadas)</h3>
+            </div>
+            <div id="chartTreemap" style="height: 400px; width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 3. panel avance -->
+      <div class="panel-view" id="panel-avance">
+        <div class="dashboard-grid">
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3>Progreso Global del Reporte</h3>
+            </div>
+            <div id="chartGaugeProgress" style="height: 300px; display: flex; align-items: center; justify-content: center;"></div>
+          </div>
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3>Planificado vs Ejecutado del Reporte (Por Código)</h3>
+            </div>
+            <div class="chart-container">
+              <canvas id="chartComparativoEjecucion"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 4. panel tabla partidas -->
+      <div class="panel-view" id="panel-partidas">
+        <div class="table-card">
+          <div class="table-actions">
+            <div class="search-input-container">
+              <i data-lucide="search"></i>
+              <input type="text" class="search-input" id="tableSearchInput" placeholder="Buscar por código, capítulo o descripción...">
+            </div>
+          </div>
+          
+          <div class="table-container">
+            <table id="partidasTable">
+              <thead>
+                <tr>
+                  <th>N°</th>
+                  <th>Código</th>
+                  <th>Descripción</th>
+                  <th>Capítulo</th>
+                  <th>Unidad</th>
+                  <th>Planificado</th>
+                  <th>Ejecutado</th>
+                  <th>Avance Real</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody">
+                <!-- Se poblará vía JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 5. panel mapa -->
+      <div class="panel-view" id="panel-mapa">
+        <div class="map-panel">
+          <div class="map-meta-overlay">
+            <h4 id="mapMetaObra">Cargando Obra...</h4>
+            <p><strong>Contratante:</strong> <span id="mapMetaContratante">-</span></p>
+            <p><strong>Ubicación:</strong> Cumbres de Curumo, Caracas, Distrito Capital, Venezuela</p>
+          </div>
+          <div id="map"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    // CONFIGURACIÓN DE LA API
+    const API_URL = "https://script.google.com/macros/s/AKfycby_Bu-lP5ch4dY46z3Mp6vxhK5ixmI8cvKdOaEMAk7zRNgUlSm1A7AlUQmsM51HI6-3/exec";
+    const API_KEY = "pon-tu-clave-segura-aqui";
+    
+    // Variables de estado local
+    let sheetsAvailable = [];
+    let currentObraName = "";
+    let rawPresupuesto = [];
+    let rawDailyReport = null;
+    let combinedData = [];
+    let currentFilterUnidad = "ALL";
+    let currentFilterCapitulo = "ALL";
+    let activeCharts = {};
+    let activeApexCharts = {};
+    let mapInstance = null;
+
+    // Inicialización del Tema
+    const body = document.body;
+    const themeToggleBtn = document.getElementById("themeToggleBtn");
+    
+    const savedTheme = localStorage.getItem("theme") || "light";
+    body.setAttribute("data-theme", savedTheme);
+    updateThemeToggleUI(savedTheme);
+
+    themeToggleBtn.addEventListener("click", () => {
+      const currentTheme = body.getAttribute("data-theme");
+      const newTheme = currentTheme === "light" ? "dark" : "light";
+      body.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+      updateThemeToggleUI(newTheme);
+      
+      // Re-dibujar gráficos para ajustar colores en modo oscuro
+      renderAllCharts();
+    });
+
+    function updateThemeToggleUI(theme) {
+      const span = themeToggleBtn.querySelector("span");
+      const icon = themeToggleBtn.querySelector("i");
+      if (theme === "dark") {
+        span.textContent = "Modo Claro";
+        icon.setAttribute("data-lucide", "sun");
+      } else {
+        span.textContent = "Modo Oscuro";
+        icon.setAttribute("data-lucide", "moon");
+      }
+      lucide.createIcons();
+    }
+
+    // Navegación del menú lateral
+    const menuItems = document.querySelectorAll(".menu-item");
+    const panelViews = document.querySelectorAll(".panel-view");
+    const viewTitle = document.getElementById("viewTitle");
+    const viewSubtitle = document.getElementById("viewSubtitle");
+
+    const tabSubtitles = {
+      resumen: "Consolidado general de ejecución física",
+      presupuesto: "Estructura del presupuesto planificado",
+      avance: "Comparativa y cumplimiento de avance diario",
+      partidas: "Detalle y búsqueda pormenorizada de partidas en obra",
+      mapa: "Localización geográfica interactiva del proyecto"
+    };
+
+    menuItems.forEach(item => {
+      item.addEventListener("click", () => {
+        const tab = item.getAttribute("data-tab");
+        
+        // Actualizar UI del menu
+        menuItems.forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+        
+        // Cambiar paneles
+        panelViews.forEach(panel => {
+          if (panel.id === `panel-${tab}`) {
+            panel.classList.add("active");
+          } else {
+            panel.classList.remove("active");
+          }
+        });
+        
+        // Cambiar título de cabecera
+        viewTitle.textContent = item.querySelector("button").textContent.trim();
+        viewSubtitle.textContent = tabSubtitles[tab] || "";
+        
+        // Renderizar mapa al entrar a la pestaña mapa
+        if (tab === "mapa") {
+          setTimeout(initMap, 200);
+        }
+        
+        // Cerrar menú móvil al navegar
+        document.getElementById("sidebar").classList.remove("open");
+      });
+    });
+
+    // Hamburguesa en móviles
+    const hamburgerMenu = document.getElementById("hamburgerMenu");
+    hamburgerMenu.addEventListener("click", () => {
+      document.getElementById("sidebar").classList.add("open");
+    });
+
+    // Cerrar al hacer clic fuera del sidebar en móvil
+    document.addEventListener("click", (e) => {
+      const sidebar = document.getElementById("sidebar");
+      if (window.innerWidth <= 1024 && !sidebar.contains(e.target) && !hamburgerMenu.contains(e.target)) {
+        sidebar.classList.remove("open");
+      }
+    });
+
+    // Helper de conversión numérica
+    function parseNumeric(val) {
+      if (val === undefined || val === null || val === "" || val === "-") return 0;
+      if (typeof val === "number") return val;
+      const cleaned = String(val).replace(/[^0-9.-]/g, "");
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? 0 : num;
+    }
+
+    // Inicializar la carga de datos
+    document.addEventListener("DOMContentLoaded", async () => {
+      lucide.createIcons();
+      document.getElementById("updateTime").textContent = `Actualizado: ${new Date().toLocaleTimeString()}`;
+      
+      try {
+        await loadSheetsList();
+        document.getElementById("loadingOverlay").style.opacity = "0";
+        setTimeout(() => {
+          document.getElementById("loadingOverlay").style.visibility = "hidden";
+        }, 400);
+      } catch (err) {
+        console.error("Error cargando el dashboard:", err);
+        document.querySelector(".loading-text").innerHTML = `<span style="color:var(--danger-color)">❌ Error de conexión</span><br><small style="font-size:12px;display:block;margin-top:8px">${err.message}</small>`;
+      }
+    });
+
+    // Carga de lista de Obras (sheets)
+    async function loadSheetsList() {
+      const url = `${API_URL}?key=${API_KEY}&action=sheets`;
+      const response = await fetch(url);
+      const jsonRes = await response.json();
+      if (!jsonRes.success) throw new Error(jsonRes.error || "Error al obtener lista de obras");
+      
+      sheetsAvailable = jsonRes.sheets;
+      
+      const selectObra = document.getElementById("globalObraFilter");
+      selectObra.innerHTML = '<option value="" disabled selected>Seleccione Obra</option>';
+      
+      sheetsAvailable.forEach(sheet => {
+        const opt = document.createElement("option");
+        opt.value = sheet.name;
+        opt.textContent = sheet.name.replace(/_/g, " ").toUpperCase();
+        selectObra.appendChild(opt);
+      });
+      
+      // Auto-seleccionar la primera obra si existe
+      if (sheetsAvailable.length > 0) {
+        selectObra.selectedIndex = 1;
+        selectObra.dispatchEvent(new Event("change"));
+      }
+
+      selectObra.addEventListener("change", async (e) => {
+        currentObraName = e.target.value;
+        document.getElementById("sidebarSpreadsheetName").textContent = currentObraName.replace(/_/g, " ");
+        
+        // Resetear reporte diario cargado
+        rawDailyReport = null;
+        document.getElementById("excelFileInput").value = "";
+        document.getElementById("uploadAlertBanner").style.display = "flex";
+        document.getElementById("successUploadBanner").style.display = "none";
+        
+        // Cargar presupuesto base de la obra seleccionada
+        document.getElementById("loadingOverlay").style.visibility = "visible";
+        document.getElementById("loadingOverlay").style.opacity = "1";
+        document.querySelector(".loading-text").textContent = `Descargando presupuesto de ${currentObraName}...`;
+        
+        try {
+          await loadBudgetForObra(currentObraName);
+          document.getElementById("loadingOverlay").style.opacity = "0";
+          setTimeout(() => {
+            document.getElementById("loadingOverlay").style.visibility = "hidden";
+          }, 400);
+        } catch (err) {
+          console.error("Error al cargar la obra:", err);
+          alert(`Error cargando presupuesto de la obra: ${err.message}`);
+          document.getElementById("loadingOverlay").style.opacity = "0";
+          setTimeout(() => {
+            document.getElementById("loadingOverlay").style.visibility = "hidden";
+          }, 400);
+        }
+      });
+    }
+
+    async function loadBudgetForObra(obraName) {
+      const url = `${API_URL}?key=${API_KEY}&action=data&sheet=${obraName}`;
+      const response = await fetch(url);
+      const jsonRes = await response.json();
+      if (!jsonRes.success) throw new Error(jsonRes.error || `Error cargando hoja ${obraName}`);
+      
+      rawPresupuesto = jsonRes.data;
+      
+      // Procesar datos
+      processAndBlendData();
+      
+      // Poblar filtros de Unidades y Capítulos de esta obra
+      populateFiltersForCurrentObra();
+      
+      // Actualizar visualizaciones
+      updateKPIs();
+      renderAllCharts();
+      populateTable();
+    }
+
+    // Buscador flexible de cabeceras en filas Excel
+    function getRowValueByCleanKey(row, keyToFind) {
+      const cleanKey = keyToFind.toLowerCase().replace(/[^a-z0-9]/g, "");
+      for (let k in row) {
+        const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (cleanK === cleanKey) {
+          return row[k];
+        }
+      }
+      return undefined;
+    }
+
+    // Escuchar el cargador de archivos Excel
+    const uploadExcelBtn = document.getElementById("uploadExcelBtn");
+    const excelFileInput = document.getElementById("excelFileInput");
+
+    uploadExcelBtn.addEventListener("click", () => {
+      if (!currentObraName) {
+        alert("Por favor, seleccione primero una obra de la lista.");
+        return;
+      }
+      excelFileInput.click();
+    });
+
+    excelFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = evt.target.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          
+          // Leer la primera hoja del Excel subido
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          
+          if (jsonData.length === 0) {
+            throw new Error("El archivo de reporte Excel está vacío.");
+          }
+          
+          rawDailyReport = jsonData;
+          
+          // Blendar y re-renderizar
+          processAndBlendData();
+          updateKPIs();
+          renderAllCharts();
+          populateTable();
+          
+          // Ocultar banner de alerta y mostrar banner de éxito
+          document.getElementById("uploadAlertBanner").style.display = "none";
+          const successBanner = document.getElementById("successUploadBanner");
+          document.getElementById("successBannerTitle").textContent = `¡Reporte Diario cargado con éxito!`;
+          document.getElementById("successBannerDesc").textContent = `Se cruzaron ${jsonData.length} partidas del archivo Excel para la obra: ${currentObraName.replace(/_/g, " ")}.`;
+          successBanner.style.display = "flex";
+          
+          // Crear icono de éxito y alertar al usuario
+          lucide.createIcons();
+        } catch (err) {
+          console.error("Error al procesar Excel:", err);
+          alert(`Error procesando el reporte Excel: ${err.message}`);
+        }
+      };
+      reader.readAsBinaryString(file);
+    });
+
+    function processAndBlendData() {
+      // 1. Mapear reporte de Excel subido por "Part No." (si existe)
+      const dailyReportMap = {};
+      if (rawDailyReport && rawDailyReport.length > 0) {
+        rawDailyReport.forEach(item => {
+          // Buscador robusto de cabeceras
+          const partNoVal = getRowValueByCleanKey(item, "Part No.") || getRowValueByCleanKey(item, "partno") || getRowValueByCleanKey(item, "part_no");
+          const partNoInt = parseInt(partNoVal);
+          if (!isNaN(partNoInt)) {
+            dailyReportMap[partNoInt] = item;
+          }
+        });
+      }
+
+      // 2. Combinar presupuesto (Google Sheets) con el reporte diario (Excel)
+      combinedData = rawPresupuesto.map(preItem => {
+        const partNo = parseInt(preItem["Part No."]);
+        if (isNaN(partNo)) return null;
+
+        const dailyItem = dailyReportMap[partNo] || {};
+        
+        // Obtener el ejecutado del reporte local
+        const excelEjecutadoRaw = getRowValueByCleanKey(dailyItem, "Ejecutado") || getRowValueByCleanKey(dailyItem, "ejecutadodia") || 0;
+        const excelObservacion = getRowValueByCleanKey(dailyItem, "Observacion") || getRowValueByCleanKey(dailyItem, "observación") || "";
+
+        return {
+          partNo: partNo,
+          codigo: preItem["Código"] || "S/C",
+          descripcion: preItem["Descripción"] || "Sin Descripción",
+          capitulo: (preItem["CAPITULO"] || "Otros Capítulos").trim(),
+          unidad: (preItem["Unidad"] || "und").trim().toLowerCase(),
+          obra: preItem["OBRA"] || currentObraName.replace(/_/g, " "),
+          contratante: preItem["CONTRTATANTE"] || "FMBV",
+          observacion: excelObservacion || preItem["Observacion"] || "",
+          presupuestado: parseNumeric(preItem["Ejecutado"]), // Cantidad Planificada de Sheets
+          ejecutadoDia1: parseNumeric(excelEjecutadoRaw)    // Cantidad Ejecutada del Excel
+        };
+      }).filter(item => item !== null);
+    }
+
+    function populateFiltersForCurrentObra() {
+      // Filtro de Unidades
+      const selectUnidad = document.getElementById("globalUnidadFilter");
+      selectUnidad.innerHTML = '<option value="ALL">Todas las Unidades</option>';
+      const unidades = [...new Set(combinedData.map(item => item.unidad))].sort();
+      unidades.forEach(uni => {
+        if (uni) {
+          const opt = document.createElement("option");
+          opt.value = uni;
+          opt.textContent = uni.toUpperCase();
+          selectUnidad.appendChild(opt);
+        }
+      });
+      currentFilterUnidad = "ALL";
+
+      // Filtro de Capítulos
+      const selectCapitulo = document.getElementById("globalCapituloFilter");
+      selectCapitulo.innerHTML = '<option value="ALL">Todos los Capítulos</option>';
+      const capitulos = [...new Set(combinedData.map(item => item.capitulo))].sort();
+      capitulos.forEach(cap => {
+        if (cap) {
+          const opt = document.createElement("option");
+          opt.value = cap;
+          opt.textContent = cap;
+          selectCapitulo.appendChild(opt);
+        }
+      });
+      currentFilterCapitulo = "ALL";
+    }
+
+    function getFilteredData() {
+      let data = combinedData;
+      if (currentFilterUnidad !== "ALL") {
+        data = data.filter(item => item.unidad === currentFilterUnidad);
+      }
+      if (currentFilterCapitulo !== "ALL") {
+        data = data.filter(item => item.capitulo === currentFilterCapitulo);
+      }
+      return data;
+    }
+
+    function updateKPIs() {
+      const data = getFilteredData();
+      
+      const totalPartidas = data.length;
+      const totalPlanificado = data.reduce((sum, item) => sum + item.presupuestado, 0);
+      const totalEjecutado = data.reduce((sum, item) => sum + item.ejecutadoDia1, 0);
+      
+      const avanceFisico = totalPlanificado > 0 ? (totalEjecutado / totalPlanificado) * 100 : 0;
+      
+      document.getElementById("kpiTotalPartidas").textContent = totalPartidas;
+      document.getElementById("kpiTotalPlanificado").textContent = totalPlanificado.toLocaleString("es-ES", { maximumFractionDigits: 1 });
+      document.getElementById("kpiTotalEjecutado").textContent = totalEjecutado.toLocaleString("es-ES", { maximumFractionDigits: 1 });
+      document.getElementById("kpiAvanceFisico").textContent = `${avanceFisico.toFixed(1)}%`;
+      
+      // Meta de ejecutado
+      const metaPercent = totalPlanificado > 0 ? (totalEjecutado / totalPlanificado) * 100 : 0;
+      document.getElementById("kpiEjecutadoMeta").textContent = `+${metaPercent.toFixed(1)}%`;
+      
+      // Metadatos de mapa
+      if (data.length > 0) {
+        document.getElementById("mapMetaObra").textContent = data[0].obra;
+        document.getElementById("mapMetaContratante").textContent = data[0].contratante;
+      }
+    }
+
+    // Renderizar todos los gráficos
+    function renderAllCharts() {
+      const isDark = document.body.getAttribute("data-theme") === "dark";
+      const textColor = isDark ? "#9ca3af" : "#4b5563";
+      const gridColor = isDark ? "#374151" : "#e5e7eb";
+
+      const data = getFilteredData();
+
+      // Destruir gráficos existentes para evitar bugs
+      Object.keys(activeCharts).forEach(key => {
+        if (activeCharts[key]) activeCharts[key].destroy();
+      });
+      Object.keys(activeApexCharts).forEach(key => {
+        if (activeApexCharts[key]) activeApexCharts[key].destroy();
+      });
+
+      // 1. Gráfico Donut (Distribución por Unidad)
+      const canvasDonut = document.getElementById("chartUnidadesDonut");
+      if (canvasDonut) {
+        const ctx = canvasDonut.getContext("2d");
+        const unidadesCounts = {};
+        data.forEach(item => {
+          unidadesCounts[item.unidad] = (unidadesCounts[item.unidad] || 0) + 1;
+        });
+
+        const labels = Object.keys(unidadesCounts).map(l => l.toUpperCase());
+        const counts = Object.values(unidadesCounts);
+
+        activeCharts.donut = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: counts,
+              backgroundColor: ['#1a73e8', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#ff6d00', '#00abc0', '#795548', '#607d8b'],
+              borderWidth: isDark ? 2 : 1,
+              borderColor: isDark ? '#1f2937' : '#ffffff'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'right',
+                labels: { color: textColor, font: { family: 'Inter' } }
+              }
+            }
+          }
+        });
+      }
+
+      // 2. Gráfico Barras Horizontales Top 10 Presupuestado
+      const canvasTop = document.getElementById("chartTopPresupuesto");
+      if (canvasTop) {
+        const ctx = canvasTop.getContext("2d");
+        const sortedData = [...data].sort((a, b) => b.presupuestado - a.presupuestado).slice(0, 10);
+        
+        const labels = sortedData.map(item => item.codigo);
+        const plannedVals = sortedData.map(item => item.presupuestado);
+
+        activeCharts.top = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Cantidad Planificada',
+              data: plannedVals,
+              backgroundColor: '#1a73e8',
+              borderRadius: 6
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              x: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter' } } },
+              y: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter' } } }
+            }
+          }
+        });
+      }
+
+      // 3. ApexCharts Treemap (Jerarquía de Cantidades agrupadas por CAPÍTULO)
+      const containerTreemap = document.getElementById("chartTreemap");
+      if (containerTreemap) {
+        const capitulosPres = {};
+        data.forEach(item => {
+          capitulosPres[item.capitulo] = (capitulosPres[item.capitulo] || 0) + item.presupuestado;
+        });
+
+        const seriesData = Object.keys(capitulosPres).map(cap => ({
+          x: cap,
+          y: Math.round(capitulosPres[cap] * 100) / 100
+        })).filter(item => item.y > 0);
+
+        const options = {
+          series: [{ data: seriesData }],
+          legend: { show: false },
+          chart: {
+            height: 400,
+            type: 'treemap',
+            toolbar: { show: false },
+            background: 'transparent'
+          },
+          colors: ['#1a73e8', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#ff6d00', '#00abc0'],
+          theme: { mode: isDark ? 'dark' : 'light' },
+          plotOptions: {
+            treemap: {
+              enableShades: true,
+              shadeIntensity: 0.5,
+              reverseNegativeShade: true
+            }
+          }
+        };
+
+        activeApexCharts.treemap = new ApexCharts(containerTreemap, options);
+        activeApexCharts.treemap.render();
+      }
+
+      // 4. ApexCharts RadialBar Gauge (Progreso General)
+      const containerGauge = document.getElementById("chartGaugeProgress");
+      if (containerGauge) {
+        const totalPlan = data.reduce((sum, item) => sum + item.presupuestado, 0);
+        const totalExec = data.reduce((sum, item) => sum + item.ejecutadoDia1, 0);
+        const percent = totalPlan > 0 ? Math.min(Math.round((totalExec / totalPlan) * 100), 100) : 0;
+
+        const options = {
+          series: [percent],
+          chart: {
+            height: 320,
+            type: 'radialBar',
+            background: 'transparent'
+          },
+          plotOptions: {
+            radialBar: {
+              startAngle: -135,
+              endAngle: 135,
+              hollow: { size: '70%' },
+              track: {
+                background: isDark ? '#374151' : '#e5e7eb',
+                strokeWidth: '97%'
+              },
+              dataLabels: {
+                name: {
+                  show: true,
+                  fontSize: '14px',
+                  color: textColor,
+                  offsetY: 20
+                },
+                value: {
+                  offsetY: -15,
+                  fontSize: '36px',
+                  color: isDark ? '#ffffff' : '#111827',
+                  show: true,
+                  formatter: function (val) {
+                    return val + "%";
+                  }
+                }
+              }
+            }
+          },
+          fill: {
+            type: 'gradient',
+            gradient: {
+              shade: 'dark',
+              shadeIntensity: 0.15,
+              inverseColors: false,
+              opacityFrom: 1,
+              opacityTo: 1,
+              stops: [0, 50, 65, 91]
+            }
+          },
+          stroke: { dashArray: 4 },
+          labels: ['Cumplimiento de Obra'],
+          theme: { mode: isDark ? 'dark' : 'light' }
+        };
+
+        activeApexCharts.gauge = new ApexCharts(containerGauge, options);
+        activeApexCharts.gauge.render();
+      }
+
+      // 5. Gráfico de Comparación Planificado vs Ejecutado
+      const canvasComparativo = document.getElementById("chartComparativoEjecucion");
+      if (canvasComparativo) {
+        const ctx = canvasComparativo.getContext("2d");
+        
+        // Mostrar elementos planificados o ejecutados
+        const activeData = data.filter(item => item.presupuestado > 0 || item.ejecutadoDia1 > 0).slice(0, 15);
+        
+        const labels = activeData.map(item => item.codigo);
+        const planned = activeData.map(item => item.presupuestado);
+        const executed = activeData.map(item => item.ejecutadoDia1);
+
+        activeCharts.comparativo = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: 'Planificado',
+                data: planned,
+                backgroundColor: '#1a73e8',
+                borderRadius: 4
+              },
+              {
+                label: 'Ejecutado Real',
+                data: executed,
+                backgroundColor: '#34a853',
+                borderRadius: 4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: { color: textColor, font: { family: 'Inter' } }
+              }
+            },
+            scales: {
+              x: { grid: { display: false }, ticks: { color: textColor, font: { family: 'Inter' } } },
+              y: { grid: { color: gridColor }, ticks: { color: textColor, font: { family: 'Inter' } } }
+            }
+          }
+        });
+      }
+    }
+
+    // Poblar y manejar la tabla de partidas
+    function populateTable() {
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+      
+      const data = getFilteredData();
+      
+      // Filtrar por término de búsqueda si existe
+      const searchTerm = document.getElementById("tableSearchInput").value.toLowerCase();
+      const filtered = data.filter(item => 
+        item.codigo.toLowerCase().includes(searchTerm) || 
+        item.descripcion.toLowerCase().includes(searchTerm) ||
+        item.capitulo.toLowerCase().includes(searchTerm)
+      );
+
+      filtered.forEach(item => {
+        const tr = document.createElement("tr");
+        
+        const percent = item.presupuestado > 0 ? (item.ejecutadoDia1 / item.presupuestado) * 100 : 0;
+        const progressClass = percent >= 100 ? "complete" : "";
+        
+        tr.innerHTML = `
+          <td>${item.partNo}</td>
+          <td><span class="badge badge-blue">${item.codigo}</span></td>
+          <td title="${item.descripcion}">${item.descripcion}</td>
+          <td><span class="badge badge-gray" title="${item.capitulo}">${item.capitulo}</span></td>
+          <td>${item.unidad.toUpperCase()}</td>
+          <td>${item.presupuestado.toLocaleString("es-ES")}</td>
+          <td>${item.ejecutadoDia1 > 0 ? item.ejecutadoDia1.toLocaleString("es-ES") : "-"}</td>
+          <td>
+            <div class="progress-cell">
+              <div class="progress-bar-container">
+                <div class="progress-bar-fill ${progressClass}" style="width: ${Math.min(percent, 100)}%"></div>
+              </div>
+              <span class="progress-text">${percent.toFixed(1)}%</span>
+            </div>
+          </td>
+        `;
+        
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Escuchar cambios de teclado en la barra de búsqueda
+    document.getElementById("tableSearchInput").addEventListener("input", populateTable);
+
+    // Inicializar mapa de MapLibre
+    function initMap() {
+      if (mapInstance) return; // Ya inicializado
+      
+      // Coordenadas de Cumbres de Curumo, Caracas, Venezuela
+      const caracasCoords = [-66.883, 10.453];
+      
+      try {
+        mapInstance = new maplibregl.Map({
+          container: 'map',
+          style: 'https://tiles.openfreemap.org/styles/positron', // Estilo gratuito de OpenFreeMap
+          center: caracasCoords,
+          zoom: 14,
+          pitch: 30
+        });
+
+        // Controles de navegación del mapa
+        mapInstance.addControl(new maplibregl.NavigationControl());
+
+        // Crear un marker personalizado
+        const marker = new maplibregl.Marker({ color: "#1a73e8" })
+          .setLngLat(caracasCoords)
+          .setPopup(new maplibregl.Popup({ offset: 25 })
+            .setHTML(`
+              <h3 style="font-size:14px;font-weight:700;margin-bottom:4px;color:#1a73e8">Proyecto Cumbres de Curumo</h3>
+              <p style="font-size:12px;margin-bottom:2px"><strong>Contratante:</strong> Fundación Misión Venezuela Bella</p>
+              <p style="font-size:12px"><strong>Estado:</strong> Ejecución diaria mediante Excel</p>
+            `)
+          )
+          .addTo(mapInstance);
+      } catch (err) {
+        console.error("Error al cargar MapLibre:", err);
+      }
+    }
+  </script>
+</body>
+</html>
