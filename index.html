@@ -1153,12 +1153,7 @@
         selectObra.appendChild(opt);
       });
       
-      // Auto-seleccionar la primera obra si existe
-      if (sheetsAvailable.length > 0) {
-        selectObra.selectedIndex = 1;
-        selectObra.dispatchEvent(new Event("change"));
-      }
-
+      // Registrar el listener ANTES de disparar el evento de selección para evitar la condición de carrera (race condition)
       selectObra.addEventListener("change", async (e) => {
         currentObraName = e.target.value;
         document.getElementById("sidebarSpreadsheetName").textContent = currentObraName.replace(/_/g, " ");
@@ -1189,10 +1184,17 @@
           }, 400);
         }
       });
+
+      // Auto-seleccionar la primera obra si existe
+      if (sheetsAvailable.length > 0) {
+        selectObra.selectedIndex = 1;
+        selectObra.dispatchEvent(new Event("change"));
+      }
     }
 
     async function loadBudgetForObra(obraName) {
-      const url = `${API_URL}?key=${API_KEY}&action=data&sheet=${obraName}`;
+      // Codificar correctamente el nombre de la obra para evitar problemas con espacios o caracteres especiales en la URL
+      const url = `${API_URL}?key=${API_KEY}&action=data&sheet=${encodeURIComponent(obraName)}`;
       const response = await fetch(url);
       const jsonRes = await response.json();
       if (!jsonRes.success) throw new Error(jsonRes.error || `Error cargando hoja ${obraName}`);
@@ -1211,7 +1213,7 @@
       populateTable();
     }
 
-    // Buscador flexible de cabeceras en filas Excel
+    // Buscador flexible de cabeceras en filas Excel o Google Sheets
     function getRowValueByCleanKey(row, keyToFind) {
       const cleanKey = keyToFind.toLowerCase().replace(/[^a-z0-9]/g, "");
       for (let k in row) {
@@ -1242,8 +1244,9 @@
       const reader = new FileReader();
       reader.onload = function(evt) {
         try {
-          const data = evt.target.result;
-          const workbook = XLSX.read(data, { type: 'binary' });
+          // Usar lectura ArrayBuffer moderna para máxima compatibilidad con SheetJS mini
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
           
           // Leer la primera hoja del Excel subido
           const firstSheetName = workbook.SheetNames[0];
@@ -1276,7 +1279,7 @@
           alert(`Error procesando el reporte Excel: ${err.message}`);
         }
       };
-      reader.readAsBinaryString(file);
+      reader.readAsArrayBuffer(file);
     });
 
     function processAndBlendData() {
@@ -1304,17 +1307,24 @@
         const excelEjecutadoRaw = getRowValueByCleanKey(dailyItem, "Ejecutado") || getRowValueByCleanKey(dailyItem, "ejecutadodia") || 0;
         const excelObservacion = getRowValueByCleanKey(dailyItem, "Observacion") || getRowValueByCleanKey(dailyItem, "observación") || "";
 
+        // Obtener valores de Google Sheets usando búsqueda robusta (insensible a acentos/casing)
+        const codigoVal = getRowValueByCleanKey(preItem, "Código") || getRowValueByCleanKey(preItem, "codigo") || "S/C";
+        const descripcionVal = getRowValueByCleanKey(preItem, "Descripción") || getRowValueByCleanKey(preItem, "descripcion") || "Sin Descripción";
+        const capituloVal = getRowValueByCleanKey(preItem, "CAPITULO") || getRowValueByCleanKey(preItem, "capitulo") || "Otros Capítulos";
+        const unidadVal = getRowValueByCleanKey(preItem, "Unidad") || getRowValueByCleanKey(preItem, "unidad") || "und";
+        const presupuestadoVal = getRowValueByCleanKey(preItem, "Ejecutado") || getRowValueByCleanKey(preItem, "ejecutado") || 0;
+
         return {
           partNo: partNo,
-          codigo: preItem["Código"] || "S/C",
-          descripcion: preItem["Descripción"] || "Sin Descripción",
-          capitulo: (preItem["CAPITULO"] || "Otros Capítulos").trim(),
-          unidad: (preItem["Unidad"] || "und").trim().toLowerCase(),
+          codigo: codigoVal,
+          descripcion: descripcionVal,
+          capitulo: String(capituloVal).trim(),
+          unidad: String(unidadVal).trim().toLowerCase(),
           obra: preItem["OBRA"] || currentObraName.replace(/_/g, " "),
           contratante: preItem["CONTRTATANTE"] || "FMBV",
           observacion: excelObservacion || preItem["Observacion"] || "",
-          presupuestado: parseNumeric(preItem["Ejecutado"]), // Cantidad Planificada de Sheets
-          ejecutadoDia1: parseNumeric(excelEjecutadoRaw)    // Cantidad Ejecutada del Excel
+          presupuestado: parseNumeric(presupuestadoVal), // Cantidad Planificada de Sheets
+          ejecutadoDia1: parseNumeric(excelEjecutadoRaw) // Cantidad Ejecutada del Excel
         };
       }).filter(item => item !== null);
     }
